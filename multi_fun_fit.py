@@ -27,6 +27,7 @@ def n_gauss(x, *gaussian_params):
 
 def main():
 
+    # manage command line options
     parser = ap.ArgumentParser(description="options for this script")
 
     parser.add_argument("-d","--data", type=str, default=None, 
@@ -44,21 +45,31 @@ def main():
 
     args = parser.parse_args()
 
+    # read in the data and drop rows without valid data
     df = pd.read_csv(args.data)
     df.dropna(inplace=True)
-    print(df.columns)
 
+    # create a histogram of the data
     hist, bins = np.histogram(df[args.name].values, bins="auto")
+
+    # use the bins to make x values for the center of each bin
     mids = [(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+
+    # suppress the histogram, and the mids, by some amount
     suppressed_hist = [x for x in hist if x > args.suppress]
     suppressed_mids = [mids[i] for i in range(len(mids)) if hist[i] > args.suppress]
 
+    # use the suppressed data and fit with n gaussians
     popt, pcov = curve_fit(n_gauss, suppressed_mids, suppressed_hist, p0=args.p0, bounds=(args.lowbounds,args.upbounds))
+    # note: we can use pcov to evaluate the error on the fit parameters if necessary
+
+    # clean things up
     n = int(len(args.p0)/3)
     g = [popt[3*i:3*i+3] if i != n-1 else popt[3*i::] for i in range(n)]
     for i in range(len(g)):
         g[i] = [round(x,5) for x in g[i]]
 
+    # plot the result
     fig, ax = plt.subplots(1,1)
     ax.plot(suppressed_mids, suppressed_hist, "k.", label="Data")
     ax.plot(suppressed_mids, n_gauss(suppressed_mids, *popt), "r--", label=f"{n} Gaussian Fit")
@@ -66,14 +77,13 @@ def main():
         print(f'gaussian {i}: scale = {g[i][0]}, mean = {g[i][1]}, width = {g[i][2]}')
         ax.plot(suppressed_mids, gauss(suppressed_mids, g[i][0], g[i][1], g[i][2]), '-.', label=f"g{i}: $\mu$ {g[i][1]}")
 
-    #box = ax.get_position()
-    #ax.set_position([box.x0, box.y0, box.width*0.5, box.height])
-    #ax.legend(loc = 'center left', bbox_to_anchor=(1, 0.5))
     ax.legend()
 
+    # create a name for the plot and save
     tag = basename(args.data).split(".csv")[0]
     plt.savefig(f"plots/two_gauss_fit_{tag}.png")
 
+    # write all params to a file for later inspection
     with open(f"plots/fit_results_{tag}.dat","w") as f:
         for i in range(n):
             f.write(f"gaussian {i}: scale = {g[i][0]}, mean = {g[i][1]}, width = {g[i][2]}\n")
