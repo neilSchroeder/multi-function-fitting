@@ -14,9 +14,15 @@ def gauss(x, scale, mean, width):
     # returns a gaussian
     return scale * np.exp(-0.5 * np.multiply(x-mean, x-mean)/(width**2))
 
-def two_gauss(x, a1, a2, m1, m2, w1, w2):
-    # returns the sum of 2 gaussians
-    return np.add(gauss(x, a1, m1, w1), gauss(x, a2, m2, w2))
+def n_gauss(x, *gaussian_params):
+    # returns the sum of n gaussians
+    n = int(len(gaussian_params)/3)
+    ret = np.zeros(len(x))
+    for i in range(n):
+        param_index = 3*i
+        a, b, c = gaussian_params[param_index:param_index+3] if i != n-1 else gaussian_params[param_index::]
+        ret = np.add(ret, gauss(x,a,b,c))
+    return ret
 
 
 def main():
@@ -40,29 +46,39 @@ def main():
 
     df = pd.read_csv(args.data)
     df.dropna(inplace=True)
+    print(df.columns)
 
     hist, bins = np.histogram(df[args.name].values, bins="auto")
     mids = [(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
     suppressed_hist = [x for x in hist if x > args.suppress]
     suppressed_mids = [mids[i] for i in range(len(mids)) if hist[i] > args.suppress]
 
-    popt, pcov = curve_fit(two_gauss, suppressed_mids, suppressed_hist, p0=args.p0, bounds=(args.lowbounds,args.upbounds))
-    g1 = (round(popt[0], 5), round(popt[2], 5), round(popt[4],5))
-    g2 = (round(popt[1], 5), round(popt[3], 5), round(popt[5],5))
-
-    print(f'gaussian 1: scale = {g1[0]}, mean = {g1[1]}, width = {g1[2]}')
-    print(f'gaussian 2: scale = {g2[0]}, mean = {g2[1]}, width = {g2[2]}')
-
+    popt, pcov = curve_fit(n_gauss, suppressed_mids, suppressed_hist, p0=args.p0, bounds=(args.lowbounds,args.upbounds))
+    n = int(len(args.p0)/3)
+    g = [popt[3*i:3*i+3] if i != n-1 else popt[3*i::] for i in range(n)]
+    for i in range(len(g)):
+        g[i] = [round(x,5) for x in g[i]]
 
     fig, ax = plt.subplots(1,1)
     ax.plot(suppressed_mids, suppressed_hist, "k.", label="Data")
-    ax.plot(suppressed_mids, two_gauss(suppressed_mids, *popt), "r--", label="Two Gaussian Fit")
-    ax.plot([], [], label=f"g1: A {g1[0]}, $\mu$ {g1[1]}, $\sigma$ {g1[2]}")
-    ax.plot([], [], label=f"g2: A {g2[0]}, $\mu$ {g2[1]}, $\sigma$ {g2[2]}")
+    ax.plot(suppressed_mids, n_gauss(suppressed_mids, *popt), "r--", label=f"{n} Gaussian Fit")
+    for i in range(n):
+        print(f'gaussian {i}: scale = {g[i][0]}, mean = {g[i][1]}, width = {g[i][2]}')
+        ax.plot(suppressed_mids, gauss(suppressed_mids, g[i][0], g[i][1], g[i][2]), '-.', label=f"g{i}: $\mu$ {g[i][1]}")
+
+    #box = ax.get_position()
+    #ax.set_position([box.x0, box.y0, box.width*0.5, box.height])
+    #ax.legend(loc = 'center left', bbox_to_anchor=(1, 0.5))
     ax.legend()
 
     tag = basename(args.data).split(".csv")[0]
     plt.savefig(f"plots/two_gauss_fit_{tag}.png")
+
+    with open(f"plots/fit_results_{tag}.dat","w") as f:
+        for i in range(n):
+            f.write(f"gaussian {i}: scale = {g[i][0]}, mean = {g[i][1]}, width = {g[i][2]}\n")
+
+
 
 
 if __name__ == '__main__':
