@@ -45,22 +45,22 @@ def find_peaks(x,y):
         means.pop(means.index(ret_means[i]))
     return ret_means, ret_peaks 
 
+
 def get_suggested_params(x,y):
     # returns the suggested parameters for 2 gaussians
     means, scales = find_peaks(x,y)
     widths = find_widths(x, y, scales, means)
 
     for i in range(2):
-        print(f'suggested gaussian {i}: A {round(scales[i],5)}, $\mu$ {round(means[i],5)}, $\sigma$ {round(widths[i],5)}')
+        print(f'suggested gaussian {i}: scale = {round(scales[i],5)}, mean = {round(means[i],5)}, width = {round(widths[i],5)}')
 
+    return [scales[0], means[0], widths[0], scales[1], means[1], widths[1]]
 
-def manage_inputs(args):
-    # check the input args for consistency
-    return True
 
 def gauss(x, scale, mean, width):
     # returns a gaussian
     return scale * np.exp(-0.5 * np.multiply(x-mean, x-mean)/(width**2))
+
 
 def n_gauss(x, *gaussian_params):
     # returns the sum of n gaussians
@@ -95,9 +95,6 @@ def main():
 
     args = parser.parse_args()
 
-    if not manage_inputs(args):
-        print(f'[ERROR] invalid input parameters')
-
     # read in the data and drop rows without valid data
     df = pd.read_csv(args.data)
     df.dropna(inplace=True)
@@ -112,6 +109,19 @@ def main():
     # suppress the histogram, and the mids, by some amount
     suppressed_hist = [x for x in hist if x > args.suppress]
     suppressed_mids = [mids[i] for i in range(len(mids)) if hist[i] > args.suppress]
+
+    if len(args.p0)==0:
+        args.p0 = get_suggested_params(suppressed_mids, suppressed_hist)
+    
+    if len(args.lowbounds) == 0:
+        lb = [0, -1, 0]
+        for i in range(int(len(args.p0)/3)):
+            args.lowbounds = args.lowbounds + lb
+
+    if len(args.upbounds)==0:
+        ub = [999999, 1, 1]
+        for i in range(int(len(args.p0)/3)):
+            args.upbounds = args.upbounds + ub
 
     n = 0
     
