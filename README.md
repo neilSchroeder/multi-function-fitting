@@ -4,7 +4,7 @@ A demonstration of how to fit multiple functions to data using Scipy
 
 ## Features
 
-Fits up to 6 gaussians to some input data
+Fits gaussians to some input data
 
 ## usage
 
