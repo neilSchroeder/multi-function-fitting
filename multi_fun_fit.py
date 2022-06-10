@@ -154,15 +154,15 @@ def main():
 
     # create a name for the plot and save
     tag = basename(args.data).split(".csv")[0]
-    plt.savefig(f"plots/two_gauss_fit_{tag}.png")
-    print(f"[INFO] the plot was written to plots/two_gauss_fit_{tag}.png")
+    plt.savefig(f"plots/gauss_fit_{n}_{tag}.png")
+    print(f"[INFO] the plot was written to plots/gauss_fit_{n}_{tag}.png")
 
     # write all params to a file for later inspection
-    with open(f"plots/fit_results_{tag}.dat","w") as f:
+    with open(f"plots/fit_results_{n}_gauss_{tag}.dat","w") as f:
         for i in range(n):
             f.write(f"gaussian {i}: scale = {g[i][0]}, mean = {g[i][1]}, width = {g[i][2]}\n")
 
-    print(f"[INFO] the fit results were written to plots/fit_results_{tag}.dat")
+    print(f"[INFO] the fit results were written to plots/fit_results_{n}_gauss_{tag}.dat")
 
 
 if __name__ == '__main__':
