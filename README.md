@@ -17,7 +17,18 @@ guess and bounds need to be entered in the following format:
 
 The code will fit an unlimited number of gaussians
 
-`python multi_fun_fit.py -d data/050522_file01_R1_Processed.csv --name current_0.01s_average --p0 6000 -0.0015 0.00044 12000 0.0015 0.00044 3000 0.001 0.001 2000 -0.001 0.001 --low-bounds 0 -1 0 0 -1 0 0 -1 0 0 -1 0 --up-bounds 999999 1 1 999999 1 1 999999 1 1 999999 1 1`
+`python multi_fin_fit.py -d data/050522_file01_R1_Processed.csv --name current_0.01s_average --no-fit`
+
+this returns the following suggested parameters:
+
+```
+suggested gaussian 0: A 14113, $\mu$ 0.0011, $\sigma$ 0.00068  
+suggested gaussian 1: A 8188, $\mu$ -0.00128, $\sigma$ 0.00068
+```
+
+so we run with these suggestions as follows:
+
+`python multi_fun_fit.py -d data/050522_file01_R1_Processed.csv --name current_0.01s_average --p0 14113 0.0011 0.00068 8188 -0.00128 0.00068 --low-bounds 0 -1 0 0 -1 0 --up-bounds 999999 1 1 999999 1 1`
 
 
 ![Double gaussian fit to suppressed data](https://github.com/neilSchroeder/multi-function-fitting/blob/main/plots/two_gauss_fit_050522_file01_R1_Processed.png)
